@@ -48,6 +48,17 @@ Every package extends `tsconfig.base.json` which sets `composite: true`. The roo
 - `pnpm run build` — runs `typecheck` first, then recursively runs `build` in all packages that define it
 - `pnpm run typecheck` — runs `tsc --build --emitDeclarationOnly` using project references
 
+## Artifacts
+
+### `artifacts/supply-chain-dashboard` (`@workspace/supply-chain-dashboard`)
+
+Production-ready Supply Chain Dashboard web app. React + Vite + Tailwind CSS with:
+- 9 full-featured dashboard pages: Executive Overview, Inventory, Logistics, Procurement, Forecast, Production, Costs, Risks, Orders
+- Glassmorphism dark/light theme with indigo/cyan palette (Plus Jakarta Sans font)
+- Framer Motion animations, animated KPI counters, real-time data updates
+- Recharts for all visualizations
+- All API hooks wired from `@workspace/api-client-react`
+
 ## Packages
 
 ### `artifacts/api-server` (`@workspace/api-server`)

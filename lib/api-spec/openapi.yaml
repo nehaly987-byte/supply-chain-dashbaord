@@ -1,22 +1,38 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Supply Chain Dashboard API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: overview
+    description: Executive overview & KPIs
+  - name: inventory
+    description: Inventory management
+  - name: logistics
+    description: Logistics & transportation
+  - name: suppliers
+    description: Procurement & suppliers
+  - name: forecast
+    description: Demand forecasting
+  - name: production
+    description: Production dashboard
+  - name: costs
+    description: Cost & financial analytics
+  - name: risks
+    description: Risk & exceptions
+  - name: orders
+    description: Order management
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +40,579 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /overview/kpis:
+    get:
+      operationId: getKpis
+      tags: [overview]
+      summary: Get executive KPIs
+      responses:
+        "200":
+          description: KPI data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/KpiData"
+
+  /overview/demand-supply:
+    get:
+      operationId: getDemandSupply
+      tags: [overview]
+      summary: Demand vs supply trend
+      parameters:
+        - name: period
+          in: query
+          schema:
+            type: string
+            enum: [7d, 30d, 90d, 1y]
+            default: 30d
+      responses:
+        "200":
+          description: Demand vs supply data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/DemandSupplyPoint"
+                required: [data]
+
+  /overview/monthly-performance:
+    get:
+      operationId: getMonthlyPerformance
+      tags: [overview]
+      summary: Monthly performance metrics
+      responses:
+        "200":
+          description: Monthly performance data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/MonthlyPerformance"
+                required: [data]
+
+  /inventory:
+    get:
+      operationId: getInventory
+      tags: [inventory]
+      summary: Get inventory data
+      parameters:
+        - name: warehouse
+          in: query
+          schema:
+            type: string
+        - name: category
+          in: query
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: Inventory data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InventoryResponse"
+
+  /inventory/stock-levels:
+    get:
+      operationId: getStockLevels
+      tags: [inventory]
+      summary: Stock levels by category/warehouse
+      responses:
+        "200":
+          description: Stock levels
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/StockLevel"
+                required: [data]
+
+  /inventory/aging:
+    get:
+      operationId: getInventoryAging
+      tags: [inventory]
+      summary: Inventory aging heatmap data
+      responses:
+        "200":
+          description: Aging data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/AgingData"
+                required: [data]
+
+  /inventory/alerts:
+    get:
+      operationId: getInventoryAlerts
+      tags: [inventory]
+      summary: Low stock and overstock alerts
+      responses:
+        "200":
+          description: Inventory alerts
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  alerts:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/InventoryAlert"
+                required: [alerts]
+
+  /logistics/shipments:
+    get:
+      operationId: getShipments
+      tags: [logistics]
+      summary: Get shipment tracking data
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: Shipment data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShipmentResponse"
+
+  /logistics/delivery-status:
+    get:
+      operationId: getDeliveryStatus
+      tags: [logistics]
+      summary: Delivery status breakdown (donut data)
+      responses:
+        "200":
+          description: Delivery status data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/DeliveryStatus"
+                required: [data]
+
+  /logistics/fleet:
+    get:
+      operationId: getFleetUtilization
+      tags: [logistics]
+      summary: Fleet utilization data
+      responses:
+        "200":
+          description: Fleet data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  fleet:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/FleetVehicle"
+                required: [fleet]
+
+  /suppliers:
+    get:
+      operationId: getSuppliers
+      tags: [suppliers]
+      summary: Get supplier list
+      parameters:
+        - name: sortBy
+          in: query
+          schema:
+            type: string
+        - name: sortOrder
+          in: query
+          schema:
+            type: string
+            enum: [asc, desc]
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: Supplier data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SupplierResponse"
+
+  /suppliers/scorecards:
+    get:
+      operationId: getSupplierScorecards
+      tags: [suppliers]
+      summary: Supplier performance scorecards
+      responses:
+        "200":
+          description: Scorecard data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  scorecards:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/SupplierScorecard"
+                required: [scorecards]
+
+  /suppliers/lead-times:
+    get:
+      operationId: getLeadTimeTrend
+      tags: [suppliers]
+      summary: Lead time trend chart data
+      responses:
+        "200":
+          description: Lead time data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/LeadTimePoint"
+                required: [data]
+
+  /forecast:
+    get:
+      operationId: getForecast
+      tags: [forecast]
+      summary: Demand forecast vs actual
+      parameters:
+        - name: product
+          in: query
+          schema:
+            type: string
+        - name: period
+          in: query
+          schema:
+            type: string
+            enum: [3m, 6m, 1y, 2y]
+            default: 6m
+      responses:
+        "200":
+          description: Forecast data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ForecastResponse"
+
+  /forecast/seasonality:
+    get:
+      operationId: getSeasonality
+      tags: [forecast]
+      summary: Seasonality patterns
+      responses:
+        "200":
+          description: Seasonality data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/SeasonalityPoint"
+                required: [data]
+
+  /production/output:
+    get:
+      operationId: getProductionOutput
+      tags: [production]
+      summary: Production output data
+      parameters:
+        - name: period
+          in: query
+          schema:
+            type: string
+            enum: [7d, 30d, 90d]
+            default: 30d
+      responses:
+        "200":
+          description: Production output
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ProductionOutput"
+                required: [data]
+
+  /production/machines:
+    get:
+      operationId: getMachines
+      tags: [production]
+      summary: Machine utilization data
+      responses:
+        "200":
+          description: Machine data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  machines:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Machine"
+                required: [machines]
+
+  /production/downtime:
+    get:
+      operationId: getDowntime
+      tags: [production]
+      summary: Downtime events for Gantt timeline
+      responses:
+        "200":
+          description: Downtime data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  events:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/DowntimeEvent"
+                required: [events]
+
+  /costs/breakdown:
+    get:
+      operationId: getCostBreakdown
+      tags: [costs]
+      summary: Cost breakdown by category
+      responses:
+        "200":
+          description: Cost breakdown
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/CostCategory"
+                required: [data]
+
+  /costs/trends:
+    get:
+      operationId: getCostTrends
+      tags: [costs]
+      summary: Cost trends over time
+      parameters:
+        - name: period
+          in: query
+          schema:
+            type: string
+            enum: [3m, 6m, 1y]
+            default: 6m
+      responses:
+        "200":
+          description: Cost trends
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/CostTrendPoint"
+                required: [data]
+
+  /costs/kpis:
+    get:
+      operationId: getCostKpis
+      tags: [costs]
+      summary: Cost KPIs with variance
+      responses:
+        "200":
+          description: Cost KPIs
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  kpis:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/CostKpi"
+                required: [kpis]
+
+  /risks/alerts:
+    get:
+      operationId: getRiskAlerts
+      tags: [risks]
+      summary: Real-time risk alerts
+      responses:
+        "200":
+          description: Risk alerts
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  alerts:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/RiskAlert"
+                required: [alerts]
+
+  /risks/heatmap:
+    get:
+      operationId: getRiskHeatmap
+      tags: [risks]
+      summary: Risk heatmap grid data
+      responses:
+        "200":
+          description: Risk heatmap
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/RiskHeatmapCell"
+                required: [data]
+
+  /risks/delayed-shipments:
+    get:
+      operationId: getDelayedShipments
+      tags: [risks]
+      summary: Delayed shipments tracker
+      responses:
+        "200":
+          description: Delayed shipments
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  shipments:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/DelayedShipment"
+                required: [shipments]
+
+  /orders:
+    get:
+      operationId: getOrders
+      tags: [orders]
+      summary: Get orders list
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: Orders data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrderResponse"
+
+  /orders/fulfillment:
+    get:
+      operationId: getFulfillmentMetrics
+      tags: [orders]
+      summary: Fulfillment rate and metrics
+      responses:
+        "200":
+          description: Fulfillment metrics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FulfillmentMetrics"
+
+  /orders/returns:
+    get:
+      operationId: getReturnsAnalytics
+      tags: [orders]
+      summary: Returns and backorders analytics
+      responses:
+        "200":
+          description: Returns analytics
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ReturnsPoint"
+                required: [data]
+
 components:
   schemas:
     HealthStatus:
@@ -31,6 +620,603 @@ components:
       properties:
         status:
           type: string
-      required:
-        - status
+      required: [status]
 
+    KpiData:
+      type: object
+      properties:
+        totalOrders:
+          type: number
+        totalOrdersChange:
+          type: number
+        inventoryValue:
+          type: number
+        inventoryValueChange:
+          type: number
+        onTimeDelivery:
+          type: number
+        onTimeDeliveryChange:
+          type: number
+        supplierScore:
+          type: number
+        supplierScoreChange:
+          type: number
+        revenueAtRisk:
+          type: number
+        revenueAtRiskChange:
+          type: number
+        activeShipments:
+          type: number
+        activeShipmentsChange:
+          type: number
+      required: [totalOrders, totalOrdersChange, inventoryValue, inventoryValueChange, onTimeDelivery, onTimeDeliveryChange, supplierScore, supplierScoreChange, revenueAtRisk, revenueAtRiskChange, activeShipments, activeShipmentsChange]
+
+    DemandSupplyPoint:
+      type: object
+      properties:
+        date:
+          type: string
+        demand:
+          type: number
+        supply:
+          type: number
+        forecast:
+          type: number
+      required: [date, demand, supply, forecast]
+
+    MonthlyPerformance:
+      type: object
+      properties:
+        month:
+          type: string
+        revenue:
+          type: number
+        cost:
+          type: number
+        profit:
+          type: number
+        orders:
+          type: number
+      required: [month, revenue, cost, profit, orders]
+
+    InventoryItem:
+      type: object
+      properties:
+        id:
+          type: string
+        sku:
+          type: string
+        name:
+          type: string
+        category:
+          type: string
+        warehouse:
+          type: string
+        quantity:
+          type: number
+        reorderPoint:
+          type: number
+        maxStock:
+          type: number
+        unitCost:
+          type: number
+        status:
+          type: string
+          enum: [normal, low_stock, overstock, critical]
+        lastUpdated:
+          type: string
+      required: [id, sku, name, category, warehouse, quantity, reorderPoint, maxStock, unitCost, status, lastUpdated]
+
+    InventoryResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/InventoryItem"
+        total:
+          type: number
+        page:
+          type: number
+        limit:
+          type: number
+      required: [items, total, page, limit]
+
+    StockLevel:
+      type: object
+      properties:
+        category:
+          type: string
+        warehouse:
+          type: string
+        current:
+          type: number
+        target:
+          type: number
+        minimum:
+          type: number
+      required: [category, warehouse, current, target, minimum]
+
+    AgingData:
+      type: object
+      properties:
+        category:
+          type: string
+        age0to30:
+          type: number
+        age31to60:
+          type: number
+        age61to90:
+          type: number
+        age90plus:
+          type: number
+      required: [category, age0to30, age31to60, age61to90, age90plus]
+
+    InventoryAlert:
+      type: object
+      properties:
+        id:
+          type: string
+        sku:
+          type: string
+        name:
+          type: string
+        type:
+          type: string
+          enum: [low_stock, overstock, critical]
+        currentLevel:
+          type: number
+        threshold:
+          type: number
+        warehouse:
+          type: string
+      required: [id, sku, name, type, currentLevel, threshold, warehouse]
+
+    Shipment:
+      type: object
+      properties:
+        id:
+          type: string
+        trackingNumber:
+          type: string
+        origin:
+          type: string
+        destination:
+          type: string
+        carrier:
+          type: string
+        status:
+          type: string
+          enum: [in_transit, delivered, delayed, pending, customs]
+        progress:
+          type: number
+        estimatedDelivery:
+          type: string
+        actualDelivery:
+          type: string
+          nullable: true
+        weight:
+          type: number
+        value:
+          type: number
+        lat:
+          type: number
+        lng:
+          type: number
+      required: [id, trackingNumber, origin, destination, carrier, status, progress, estimatedDelivery, actualDelivery, weight, value, lat, lng]
+
+    ShipmentResponse:
+      type: object
+      properties:
+        shipments:
+          type: array
+          items:
+            $ref: "#/components/schemas/Shipment"
+        total:
+          type: number
+        page:
+          type: number
+        limit:
+          type: number
+      required: [shipments, total, page, limit]
+
+    DeliveryStatus:
+      type: object
+      properties:
+        status:
+          type: string
+        count:
+          type: number
+        percentage:
+          type: number
+      required: [status, count, percentage]
+
+    FleetVehicle:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        type:
+          type: string
+        utilization:
+          type: number
+        status:
+          type: string
+          enum: [active, idle, maintenance, offline]
+        location:
+          type: string
+        driver:
+          type: string
+      required: [id, name, type, utilization, status, location, driver]
+
+    Supplier:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        country:
+          type: string
+        category:
+          type: string
+        leadTimeDays:
+          type: number
+        qualityScore:
+          type: number
+        deliveryScore:
+          type: number
+        priceScore:
+          type: number
+        overallScore:
+          type: number
+        status:
+          type: string
+          enum: [preferred, approved, under_review, suspended]
+        activeOrders:
+          type: number
+        totalSpend:
+          type: number
+      required: [id, name, country, category, leadTimeDays, qualityScore, deliveryScore, priceScore, overallScore, status, activeOrders, totalSpend]
+
+    SupplierResponse:
+      type: object
+      properties:
+        suppliers:
+          type: array
+          items:
+            $ref: "#/components/schemas/Supplier"
+        total:
+          type: number
+        page:
+          type: number
+        limit:
+          type: number
+      required: [suppliers, total, page, limit]
+
+    SupplierScorecard:
+      type: object
+      properties:
+        supplierId:
+          type: string
+        supplierName:
+          type: string
+        onTimeDelivery:
+          type: number
+        qualityRating:
+          type: number
+        responsiveness:
+          type: number
+        compliance:
+          type: number
+        sustainability:
+          type: number
+      required: [supplierId, supplierName, onTimeDelivery, qualityRating, responsiveness, compliance, sustainability]
+
+    LeadTimePoint:
+      type: object
+      properties:
+        month:
+          type: string
+        avgLeadTime:
+          type: number
+        targetLeadTime:
+          type: number
+        supplierA:
+          type: number
+        supplierB:
+          type: number
+      required: [month, avgLeadTime, targetLeadTime, supplierA, supplierB]
+
+    ForecastPoint:
+      type: object
+      properties:
+        date:
+          type: string
+        actual:
+          type: number
+          nullable: true
+        forecast:
+          type: number
+        upperBound:
+          type: number
+        lowerBound:
+          type: number
+      required: [date, actual, forecast, upperBound, lowerBound]
+
+    ForecastResponse:
+      type: object
+      properties:
+        product:
+          type: string
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/ForecastPoint"
+        accuracy:
+          type: number
+        mape:
+          type: number
+      required: [product, data, accuracy, mape]
+
+    SeasonalityPoint:
+      type: object
+      properties:
+        month:
+          type: string
+        index:
+          type: number
+        category:
+          type: string
+      required: [month, index, category]
+
+    ProductionOutput:
+      type: object
+      properties:
+        date:
+          type: string
+        planned:
+          type: number
+        actual:
+          type: number
+        defects:
+          type: number
+        line:
+          type: string
+      required: [date, planned, actual, defects, line]
+
+    Machine:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        line:
+          type: string
+        utilization:
+          type: number
+        efficiency:
+          type: number
+        status:
+          type: string
+          enum: [running, idle, maintenance, fault]
+        lastMaintenance:
+          type: string
+        nextMaintenance:
+          type: string
+        defectRate:
+          type: number
+      required: [id, name, line, utilization, efficiency, status, lastMaintenance, nextMaintenance, defectRate]
+
+    DowntimeEvent:
+      type: object
+      properties:
+        id:
+          type: string
+        machineId:
+          type: string
+        machineName:
+          type: string
+        startTime:
+          type: string
+        endTime:
+          type: string
+          nullable: true
+        reason:
+          type: string
+        severity:
+          type: string
+          enum: [low, medium, high, critical]
+        impactHours:
+          type: number
+      required: [id, machineId, machineName, startTime, endTime, reason, severity, impactHours]
+
+    CostCategory:
+      type: object
+      properties:
+        name:
+          type: string
+        value:
+          type: number
+        percentage:
+          type: number
+        change:
+          type: number
+      required: [name, value, percentage, change]
+
+    CostTrendPoint:
+      type: object
+      properties:
+        month:
+          type: string
+        logistics:
+          type: number
+        manufacturing:
+          type: number
+        procurement:
+          type: number
+        overhead:
+          type: number
+        total:
+          type: number
+      required: [month, logistics, manufacturing, procurement, overhead, total]
+
+    CostKpi:
+      type: object
+      properties:
+        name:
+          type: string
+        value:
+          type: number
+        unit:
+          type: string
+        variance:
+          type: number
+        target:
+          type: number
+        trend:
+          type: string
+          enum: [up, down, stable]
+      required: [name, value, unit, variance, target, trend]
+
+    RiskAlert:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        severity:
+          type: string
+          enum: [low, medium, high, critical]
+        category:
+          type: string
+        timestamp:
+          type: string
+        resolved:
+          type: boolean
+      required: [id, title, description, severity, category, timestamp, resolved]
+
+    RiskHeatmapCell:
+      type: object
+      properties:
+        category:
+          type: string
+        region:
+          type: string
+        riskScore:
+          type: number
+        impactLevel:
+          type: string
+          enum: [low, medium, high, critical]
+      required: [category, region, riskScore, impactLevel]
+
+    DelayedShipment:
+      type: object
+      properties:
+        id:
+          type: string
+        trackingNumber:
+          type: string
+        origin:
+          type: string
+        destination:
+          type: string
+        delayDays:
+          type: number
+        reason:
+          type: string
+        value:
+          type: number
+        carrier:
+          type: string
+      required: [id, trackingNumber, origin, destination, delayDays, reason, value, carrier]
+
+    Order:
+      type: object
+      properties:
+        id:
+          type: string
+        orderNumber:
+          type: string
+        customer:
+          type: string
+        status:
+          type: string
+          enum: [pending, processing, shipped, delivered, cancelled, returned]
+        items:
+          type: number
+        value:
+          type: number
+        createdAt:
+          type: string
+        estimatedDelivery:
+          type: string
+        priority:
+          type: string
+          enum: [standard, express, urgent]
+        region:
+          type: string
+      required: [id, orderNumber, customer, status, items, value, createdAt, estimatedDelivery, priority, region]
+
+    OrderResponse:
+      type: object
+      properties:
+        orders:
+          type: array
+          items:
+            $ref: "#/components/schemas/Order"
+        total:
+          type: number
+        page:
+          type: number
+        limit:
+          type: number
+      required: [orders, total, page, limit]
+
+    FulfillmentMetrics:
+      type: object
+      properties:
+        fulfillmentRate:
+          type: number
+        averageProcessingTime:
+          type: number
+        onTimeShipmentRate:
+          type: number
+        backorderRate:
+          type: number
+        cancelRate:
+          type: number
+        returnRate:
+          type: number
+        stagesBreakdown:
+          type: array
+          items:
+            type: object
+            properties:
+              stage:
+                type: string
+              count:
+                type: number
+              avgHours:
+                type: number
+            required: [stage, count, avgHours]
+      required: [fulfillmentRate, averageProcessingTime, onTimeShipmentRate, backorderRate, cancelRate, returnRate, stagesBreakdown]
+
+    ReturnsPoint:
+      type: object
+      properties:
+        month:
+          type: string
+        returns:
+          type: number
+        backorders:
+          type: number
+        cancellations:
+          type: number
+      required: [month, returns, backorders, cancellations]
