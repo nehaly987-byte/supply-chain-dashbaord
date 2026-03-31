@@ -17,6 +17,7 @@ import ProductionDashboard from "@/pages/dashboard/production";
 import CostsDashboard from "@/pages/dashboard/costs";
 import RisksDashboard from "@/pages/dashboard/risks";
 import OrdersDashboard from "@/pages/dashboard/orders";
+import SettingsPage from "@/pages/dashboard/settings";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -40,6 +41,7 @@ function Router() {
         <Route path="/costs" component={CostsDashboard} />
         <Route path="/risks" component={RisksDashboard} />
         <Route path="/orders" component={OrdersDashboard} />
+        <Route path="/settings" component={SettingsPage} />
         <Route component={NotFound} />
       </Switch>
     </AnimatePresence>

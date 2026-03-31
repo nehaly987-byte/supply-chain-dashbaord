@@ -9,6 +9,7 @@ import {
   DollarSign, 
   AlertTriangle, 
   ShoppingCart,
+  Settings,
   Menu
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -24,6 +25,7 @@ const navItems = [
   { href: "/costs", icon: DollarSign, label: "Costs & Financial" },
   { href: "/risks", icon: AlertTriangle, label: "Risk & Exceptions" },
   { href: "/orders", icon: ShoppingCart, label: "Orders" },
+  { href: "/settings", icon: Settings, label: "Settings" },
 ];
 
 export function Sidebar() {
