@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Layout } from "@/components/layout/Layout";
 import { AnimatePresence } from "framer-motion";
+import { SettingsProvider } from "@/contexts/SettingsContext";
 import NotFound from "@/pages/not-found";
 
 // Pages
@@ -52,14 +53,16 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider defaultTheme="dark" storageKey="nexus-theme">
-        <TooltipProvider>
-          <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-            <Layout>
-              <Router />
-            </Layout>
-          </WouterRouter>
-          <Toaster />
-        </TooltipProvider>
+        <SettingsProvider>
+          <TooltipProvider>
+            <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+              <Layout>
+                <Router />
+              </Layout>
+            </WouterRouter>
+            <Toaster />
+          </TooltipProvider>
+        </SettingsProvider>
       </ThemeProvider>
     </QueryClientProvider>
   );

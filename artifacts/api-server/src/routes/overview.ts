@@ -24,6 +24,10 @@ router.get("/overview/kpis", (_req, res) => {
     revenueAtRiskChange: parseFloat(randomBetween(-12.0, 8.5).toFixed(1)),
     activeShipments: randomInt(342, 410),
     activeShipmentsChange: parseFloat(randomBetween(-5.0, 12.0).toFixed(1)),
+    fillRate: parseFloat(randomBetween(94.2, 98.8).toFixed(1)),
+    fillRateChange: parseFloat(randomBetween(-1.2, 2.8).toFixed(1)),
+    cycleTime: parseFloat(randomBetween(3.8, 5.2).toFixed(1)),
+    cycleTimeChange: parseFloat(randomBetween(-8.0, 4.5).toFixed(1)),
   });
 });
 

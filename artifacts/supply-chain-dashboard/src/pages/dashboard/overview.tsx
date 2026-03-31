@@ -3,20 +3,36 @@ import { PageTransition, StaggerContainer, StaggerItem } from "@/components/Page
 import { RealTimeCounter } from "@/components/AnimatedCounter";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowUpRight, ArrowDownRight, Package, Truck, Activity, DollarSign, AlertTriangle } from "lucide-react";
+import { ArrowUpRight, ArrowDownRight, Package, Truck, Activity, DollarSign, AlertTriangle, ShoppingCart, Clock } from "lucide-react";
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
   BarChart, Bar, Legend, Cell
 } from "recharts";
+import { useSettings } from "@/contexts/SettingsContext";
 
 export default function ExecutiveOverview() {
   const { data: kpiData, isLoading: kpiLoading } = useGetKpis({ query: { queryKey: getGetKpisQueryKey() } });
   const { data: demandSupply, isLoading: dsLoading } = useGetDemandSupply({ period: "30d" }, { query: { queryKey: getGetDemandSupplyQueryKey({ period: "30d" }) } });
   const { data: performance, isLoading: perfLoading } = useGetMonthlyPerformance({ query: { queryKey: getGetMonthlyPerformanceQueryKey() } });
+  const { settings } = useSettings();
 
   const formatCurrency = (val: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', notation: 'compact', maximumFractionDigits: 1 }).format(val);
   const formatPercent = (val: number) => `${val.toFixed(1)}%`;
   const formatNumber = (val: number) => new Intl.NumberFormat('en-US', { notation: 'compact' }).format(val);
+
+  const allKpiCards = [
+    { title: "Total Inventory Value", value: kpiData?.inventoryValue,    change: kpiData?.inventoryValueChange,    icon: Package,            format: formatCurrency,                         invertTrend: false },
+    { title: "Revenue at Risk",       value: kpiData?.revenueAtRisk,     change: kpiData?.revenueAtRiskChange,     icon: AlertTriangleIcon,  format: formatCurrency,                         invertTrend: true  },
+    { title: "On-Time Delivery",      value: kpiData?.onTimeDelivery,    change: kpiData?.onTimeDeliveryChange,    icon: Truck,              format: formatPercent,                          invertTrend: false },
+    { title: "Supplier Score",        value: kpiData?.supplierScore,     change: kpiData?.supplierScoreChange,     icon: Activity,           format: (v: number) => `${v.toFixed(1)} / 100`, invertTrend: false },
+    { title: "Total Orders",          value: kpiData?.totalOrders,       change: kpiData?.totalOrdersChange,       icon: ShoppingCart,       format: formatNumber,                           invertTrend: false },
+    { title: "Active Shipments",      value: kpiData?.activeShipments,   change: kpiData?.activeShipmentsChange,   icon: Truck,              format: formatNumber,                           invertTrend: false },
+    { title: "Fill Rate",             value: (kpiData as any)?.fillRate,         change: (kpiData as any)?.fillRateChange,         icon: DollarSign,         format: formatPercent,                          invertTrend: false },
+    { title: "Avg Cycle Time (days)", value: (kpiData as any)?.cycleTime,        change: (kpiData as any)?.cycleTimeChange,        icon: Clock,              format: (v: number) => `${v.toFixed(1)}d`,      invertTrend: true  },
+  ];
+
+  const visibleCards = allKpiCards.slice(0, parseInt(settings.kpiCount, 10));
+  const cols = visibleCards.length <= 4 ? "lg:grid-cols-4" : visibleCards.length <= 6 ? "lg:grid-cols-3" : "lg:grid-cols-4";
 
   return (
     <PageTransition>
@@ -26,40 +42,19 @@ export default function ExecutiveOverview() {
           <p className="text-muted-foreground mt-1">Real-time supply chain command center.</p>
         </div>
 
-        <StaggerContainer className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <KpiCard
-            title="Total Inventory Value"
-            value={kpiData?.inventoryValue}
-            change={kpiData?.inventoryValueChange}
-            icon={Package}
-            format={formatCurrency}
-            loading={kpiLoading}
-          />
-          <KpiCard
-            title="Revenue at Risk"
-            value={kpiData?.revenueAtRisk}
-            change={kpiData?.revenueAtRiskChange}
-            icon={AlertTriangleIcon}
-            format={formatCurrency}
-            loading={kpiLoading}
-            invertTrend // Down is good
-          />
-          <KpiCard
-            title="On-Time Delivery"
-            value={kpiData?.onTimeDelivery}
-            change={kpiData?.onTimeDeliveryChange}
-            icon={Truck}
-            format={formatPercent}
-            loading={kpiLoading}
-          />
-          <KpiCard
-            title="Supplier Score"
-            value={kpiData?.supplierScore}
-            change={kpiData?.supplierScoreChange}
-            icon={Activity}
-            format={(v) => `${v.toFixed(1)} / 100`}
-            loading={kpiLoading}
-          />
+        <StaggerContainer className={`grid grid-cols-1 md:grid-cols-2 ${cols} gap-4`}>
+          {visibleCards.map((card) => (
+            <KpiCard
+              key={card.title}
+              title={card.title}
+              value={card.value}
+              change={card.change}
+              icon={card.icon}
+              format={card.format}
+              loading={kpiLoading}
+              invertTrend={card.invertTrend}
+            />
+          ))}
         </StaggerContainer>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
