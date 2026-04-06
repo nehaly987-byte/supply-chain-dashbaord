@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { 
   useGetProductionOutput, getGetProductionOutputQueryKey,
   useGetMachines, getGetMachinesQueryKey,
@@ -8,15 +7,27 @@ import { PageTransition } from "@/components/PageTransition";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
 import { 
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Legend, Line, ComposedChart, Cell
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Legend, Line, ComposedChart
 } from "recharts";
 import { Settings, AlertOctagon, Activity, Wrench, CheckCircle2, Clock } from "lucide-react";
+import { FilterBar } from "@/components/filters/FilterBar";
+import { useFilters } from "@/contexts/FiltersContext";
+
+const PAGE = "production";
+const MACHINE_STATUSES = [
+  { value: "running",     label: "Running" },
+  { value: "idle",        label: "Idle" },
+  { value: "maintenance", label: "Maintenance" },
+  { value: "fault",       label: "Fault" },
+];
 
 export default function ProductionDashboard() {
-  const [period, setPeriod] = useState<"7d" | "30d" | "90d">("30d");
+  const { filters } = useFilters(PAGE);
+  const period = (filters.dateRange?.preset === "7d" ? "7d"
+               : filters.dateRange?.preset === "90d" ? "90d"
+               : "30d") as "7d" | "30d" | "90d";
   
   const { data: outputData, isLoading: outputLoading } = useGetProductionOutput(
     { period },
@@ -41,23 +52,16 @@ export default function ProductionDashboard() {
   return (
     <PageTransition>
       <div className="flex flex-col gap-6">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Production Floor</h1>
-            <p className="text-muted-foreground mt-1">Manufacturing output, machine health, and OEE.</p>
-          </div>
-          
-          <Select value={period} onValueChange={(val: any) => setPeriod(val)}>
-            <SelectTrigger className="w-[150px] bg-card border-border">
-              <SelectValue placeholder="Time Period" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="7d">Last 7 Days</SelectItem>
-              <SelectItem value="30d">Last 30 Days</SelectItem>
-              <SelectItem value="90d">Last 90 Days</SelectItem>
-            </SelectContent>
-          </Select>
+        <div className="page-header">
+          <h1>Production Floor</h1>
+          <p className="text-sm text-muted-foreground">Manufacturing output, machine health, and OEE.</p>
         </div>
+
+        <FilterBar config={{
+          page: PAGE,
+          show: { search: true, dateRange: true, status: true },
+          options: { statuses: MACHINE_STATUSES },
+        }} />
 
         <Card className="glass-card">
           <CardHeader>

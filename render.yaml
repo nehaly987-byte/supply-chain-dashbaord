@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: supply-chain-api
+    env: node
+    # Sets the monorepo root as the base directory
+    rootDir: .
+    buildCommand: npm install -g pnpm && pnpm install && pnpm --filter @workspace/api-server run build
+    startCommand: pnpm --filter @workspace/api-server run start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "3000"
+      - key: DATABASE_URL
+        # We set sync: false so you can define it securely in the Render dashboard
+        sync: false
+      - key: GROK_API_KEY
+        # For your AI integrations
+        sync: false

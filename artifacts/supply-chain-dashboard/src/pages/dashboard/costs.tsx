@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { 
   useGetCostBreakdown, getGetCostBreakdownQueryKey,
   useGetCostTrends, getGetCostTrendsQueryKey,
@@ -7,16 +6,21 @@ import {
 import { PageTransition, StaggerContainer, StaggerItem } from "@/components/PageTransition";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
   AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Legend
 } from "recharts";
-import { ArrowDownRight, ArrowUpRight, DollarSign, Wallet, Percent, TrendingDown } from "lucide-react";
+import { ArrowDownRight, ArrowUpRight } from "lucide-react";
+import { FilterBar } from "@/components/filters/FilterBar";
+import { useFilters } from "@/contexts/FiltersContext";
 
-const COLORS = ['hsl(var(--primary))', 'hsl(var(--accent))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))', 'hsl(var(--chart-5))'];
+const PAGE = "costs";
+const COLORS = ['#6366f1', '#06b6d4', '#10b981', '#f59e0b', '#ef4444'];
 
 export default function CostsDashboard() {
-  const [period, setPeriod] = useState<"3m" | "6m" | "1y">("6m");
+  const { filters } = useFilters(PAGE);
+  const period = (filters.dateRange?.preset === "7d" || filters.dateRange?.preset === "30d" ? "3m"
+               : filters.dateRange?.preset === "90d" ? "6m"
+               : "1y") as "3m" | "6m" | "1y";
   
   const { data: breakdownData, isLoading: breakdownLoading } = useGetCostBreakdown({ query: { queryKey: getGetCostBreakdownQueryKey() } });
   const { data: trendsData, isLoading: trendsLoading } = useGetCostTrends(
@@ -30,23 +34,15 @@ export default function CostsDashboard() {
   return (
     <PageTransition>
       <div className="flex flex-col gap-6">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Cost & Financial</h1>
-            <p className="text-muted-foreground mt-1">Spend analysis and efficiency metrics.</p>
-          </div>
-          
-          <Select value={period} onValueChange={(val: any) => setPeriod(val)}>
-            <SelectTrigger className="w-[150px] bg-card border-border">
-              <SelectValue placeholder="Time Period" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="3m">Last 3 Months</SelectItem>
-              <SelectItem value="6m">Last 6 Months</SelectItem>
-              <SelectItem value="1y">Last Year</SelectItem>
-            </SelectContent>
-          </Select>
+        <div className="page-header">
+          <h1>Cost &amp; Financial</h1>
+          <p className="text-sm text-muted-foreground">Spend analysis and efficiency metrics.</p>
         </div>
+
+        <FilterBar config={{
+          page: PAGE,
+          show: { search: false, dateRange: true },
+        }} />
 
         <StaggerContainer className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {kpisLoading ? (

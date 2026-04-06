@@ -9,11 +9,29 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AlertTriangle, ShieldAlert, AlertCircle, Info, Clock, ExternalLink } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { FilterBar } from "@/components/filters/FilterBar";
+import { useFilters } from "@/contexts/FiltersContext";
+
+const PAGE = "risks";
+const RISK_CATEGORIES = ["Supplier", "Logistics", "Demand", "Compliance", "Financial", "Operational"];
+const SEVERITY_STATUSES = [
+  { value: "critical", label: "Critical" },
+  { value: "high",     label: "High" },
+  { value: "medium",   label: "Medium" },
+  { value: "low",      label: "Low" },
+];
 
 export default function RisksDashboard() {
+  const { filters } = useFilters(PAGE);
   const { data: alertsData, isLoading: alertsLoading } = useGetRiskAlerts({ query: { queryKey: getGetRiskAlertsQueryKey() } });
   const { data: heatmapData, isLoading: heatmapLoading } = useGetRiskHeatmap({ query: { queryKey: getGetRiskHeatmapQueryKey() } });
   const { data: delaysData, isLoading: delaysLoading } = useGetDelayedShipments({ query: { queryKey: getGetDelayedShipmentsQueryKey() } });
+
+  const filteredAlerts = alertsData?.alerts.filter(a => {
+    const matchSeverity = filters.status === "all" || a.severity === filters.status;
+    const matchCategory = filters.category === "all" || a.category === filters.category;
+    return !a.resolved && matchSeverity && matchCategory;
+  });
 
   const getSeverityStyles = (severity: string) => {
     switch(severity) {
@@ -36,10 +54,16 @@ export default function RisksDashboard() {
   return (
     <PageTransition>
       <div className="flex flex-col gap-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Risk & Exceptions</h1>
-          <p className="text-muted-foreground mt-1">Real-time threat monitoring and mitigation.</p>
+        <div className="page-header">
+          <h1>Risk &amp; Exceptions</h1>
+          <p className="text-sm text-muted-foreground">Real-time threat monitoring and mitigation.</p>
         </div>
+
+        <FilterBar config={{
+          page: PAGE,
+          show: { search: false, dateRange: true, status: true, category: true },
+          options: { statuses: SEVERITY_STATUSES, categories: RISK_CATEGORIES },
+        }} />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <Card className="lg:col-span-2 glass-card">
@@ -56,7 +80,7 @@ export default function RisksDashboard() {
                   Array(4).fill(0).map((_, i) => <Skeleton key={i} className="h-24 w-full" />)
                 ) : (
                   <AnimatePresence>
-                    {alertsData?.alerts.filter(a => !a.resolved).map((alert) => {
+                    {filteredAlerts?.map((alert) => {
                       const styles = getSeverityStyles(alert.severity);
                       const Icon = styles.icon;
                       

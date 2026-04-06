@@ -9,15 +9,27 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MapPin, Navigation, Truck, Plane, Ship } from "lucide-react";
 import { 
   PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend
 } from "recharts";
+import { FilterBar } from "@/components/filters/FilterBar";
+import { useFilters } from "@/contexts/FiltersContext";
+
+const PAGE = "logistics";
+const REGIONS = ["North America", "Europe", "Asia Pacific", "South America", "Middle East"];
+const STATUSES = [
+  { value: "in_transit", label: "In Transit" },
+  { value: "delayed",    label: "Delayed" },
+  { value: "customs",   label: "Customs" },
+  { value: "delivered", label: "Delivered" },
+];
 
 const COLORS = ['hsl(var(--primary))', 'hsl(var(--accent))', 'hsl(var(--destructive))', 'hsl(var(--muted-foreground))', 'hsl(var(--secondary))'];
 
 export default function LogisticsDashboard() {
+  const { filters } = useFilters(PAGE);
   const [activeTab, setActiveTab] = useState("all");
   
   const { data: shipmentsData, isLoading: shipmentsLoading } = useGetShipments(
@@ -47,10 +59,16 @@ export default function LogisticsDashboard() {
   return (
     <PageTransition>
       <div className="flex flex-col gap-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Logistics & Transportation</h1>
-          <p className="text-muted-foreground mt-1">Global fleet tracking and delivery status.</p>
+        <div className="page-header">
+          <h1>Logistics &amp; Transportation</h1>
+          <p className="text-sm text-muted-foreground">Global fleet tracking and delivery status.</p>
         </div>
+
+        <FilterBar config={{
+          page: PAGE,
+          show: { search: true, dateRange: true, status: true, location: true },
+          options: { statuses: STATUSES, locations: REGIONS },
+        }} />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <Card className="lg:col-span-2 glass-card">

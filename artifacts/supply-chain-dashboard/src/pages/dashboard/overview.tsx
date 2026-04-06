@@ -4,15 +4,25 @@ import { RealTimeCounter } from "@/components/AnimatedCounter";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowUpRight, ArrowDownRight, Package, Truck, Activity, DollarSign, AlertTriangle, ShoppingCart, Clock } from "lucide-react";
-import { 
+import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
-  BarChart, Bar, Legend, Cell
+  BarChart, Bar, Legend
 } from "recharts";
 import { useSettings } from "@/contexts/SettingsContext";
+import { FilterBar } from "@/components/filters/FilterBar";
+import { useFilters } from "@/contexts/FiltersContext";
+
+const PAGE = "overview";
 
 export default function ExecutiveOverview() {
+  const { filters } = useFilters(PAGE);
+  const period = filters.dateRange?.preset === "7d" ? "7d"
+              : filters.dateRange?.preset === "90d" ? "90d"
+              : filters.dateRange?.preset === "1y"  ? "1y"
+              : "30d";
+
   const { data: kpiData, isLoading: kpiLoading } = useGetKpis({ query: { queryKey: getGetKpisQueryKey() } });
-  const { data: demandSupply, isLoading: dsLoading } = useGetDemandSupply({ period: "30d" }, { query: { queryKey: getGetDemandSupplyQueryKey({ period: "30d" }) } });
+  const { data: demandSupply, isLoading: dsLoading } = useGetDemandSupply({ period }, { query: { queryKey: getGetDemandSupplyQueryKey({ period }) } });
   const { data: performance, isLoading: perfLoading } = useGetMonthlyPerformance({ query: { queryKey: getGetMonthlyPerformanceQueryKey() } });
   const { settings } = useSettings();
 
@@ -21,14 +31,14 @@ export default function ExecutiveOverview() {
   const formatNumber = (val: number) => new Intl.NumberFormat('en-US', { notation: 'compact' }).format(val);
 
   const allKpiCards = [
-    { title: "Total Inventory Value", value: kpiData?.inventoryValue,    change: kpiData?.inventoryValueChange,    icon: Package,            format: formatCurrency,                         invertTrend: false },
-    { title: "Revenue at Risk",       value: kpiData?.revenueAtRisk,     change: kpiData?.revenueAtRiskChange,     icon: AlertTriangleIcon,  format: formatCurrency,                         invertTrend: true  },
-    { title: "On-Time Delivery",      value: kpiData?.onTimeDelivery,    change: kpiData?.onTimeDeliveryChange,    icon: Truck,              format: formatPercent,                          invertTrend: false },
-    { title: "Supplier Score",        value: kpiData?.supplierScore,     change: kpiData?.supplierScoreChange,     icon: Activity,           format: (v: number) => `${v.toFixed(1)} / 100`, invertTrend: false },
-    { title: "Total Orders",          value: kpiData?.totalOrders,       change: kpiData?.totalOrdersChange,       icon: ShoppingCart,       format: formatNumber,                           invertTrend: false },
-    { title: "Active Shipments",      value: kpiData?.activeShipments,   change: kpiData?.activeShipmentsChange,   icon: Truck,              format: formatNumber,                           invertTrend: false },
-    { title: "Fill Rate",             value: (kpiData as any)?.fillRate,         change: (kpiData as any)?.fillRateChange,         icon: DollarSign,         format: formatPercent,                          invertTrend: false },
-    { title: "Avg Cycle Time (days)", value: (kpiData as any)?.cycleTime,        change: (kpiData as any)?.cycleTimeChange,        icon: Clock,              format: (v: number) => `${v.toFixed(1)}d`,      invertTrend: true  },
+    { title: "Total Inventory Value", value: kpiData?.inventoryValue,    change: kpiData?.inventoryValueChange,    icon: Package,           format: formatCurrency,                         invertTrend: false },
+    { title: "Revenue at Risk",       value: kpiData?.revenueAtRisk,     change: kpiData?.revenueAtRiskChange,     icon: AlertTriangleIcon, format: formatCurrency,                         invertTrend: true  },
+    { title: "On-Time Delivery",      value: kpiData?.onTimeDelivery,    change: kpiData?.onTimeDeliveryChange,    icon: Truck,             format: formatPercent,                          invertTrend: false },
+    { title: "Supplier Score",        value: kpiData?.supplierScore,     change: kpiData?.supplierScoreChange,     icon: Activity,          format: (v: number) => `${v.toFixed(1)} / 100`, invertTrend: false },
+    { title: "Total Orders",          value: kpiData?.totalOrders,       change: kpiData?.totalOrdersChange,       icon: ShoppingCart,      format: formatNumber,                           invertTrend: false },
+    { title: "Active Shipments",      value: kpiData?.activeShipments,   change: kpiData?.activeShipmentsChange,  icon: Truck,             format: formatNumber,                           invertTrend: false },
+    { title: "Fill Rate",             value: (kpiData as any)?.fillRate,        change: (kpiData as any)?.fillRateChange,       icon: DollarSign,        format: formatPercent,                          invertTrend: false },
+    { title: "Avg Cycle Time (days)", value: (kpiData as any)?.cycleTime,       change: (kpiData as any)?.cycleTimeChange,      icon: Clock,             format: (v: number) => `${v.toFixed(1)}d`,      invertTrend: true  },
   ];
 
   const visibleCards = allKpiCards.slice(0, parseInt(settings.kpiCount, 10));
@@ -37,10 +47,15 @@ export default function ExecutiveOverview() {
   return (
     <PageTransition>
       <div className="flex flex-col gap-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Executive Overview</h1>
-          <p className="text-muted-foreground mt-1">Real-time supply chain command center.</p>
+        <div className="page-header">
+          <h1>Executive Overview</h1>
+          <p className="text-sm text-muted-foreground">Real-time supply chain command center.</p>
         </div>
+
+        <FilterBar config={{
+          page: PAGE,
+          show: { search: true, dateRange: true },
+        }} />
 
         <StaggerContainer className={`grid grid-cols-1 md:grid-cols-2 ${cols} gap-4`}>
           {visibleCards.map((card) => (
@@ -61,7 +76,7 @@ export default function ExecutiveOverview() {
           <Card className="lg:col-span-2 glass-card">
             <CardHeader>
               <CardTitle>Demand vs. Supply Forecast</CardTitle>
-              <CardDescription>30-day projection with confidence intervals</CardDescription>
+              <CardDescription>{period === "7d" ? "7-day" : period === "90d" ? "90-day" : period === "1y" ? "12-month" : "30-day"} projection with confidence intervals</CardDescription>
             </CardHeader>
             <CardContent>
               {dsLoading ? (
@@ -80,14 +95,13 @@ export default function ExecutiveOverview() {
                           <stop offset="95%" stopColor="hsl(var(--accent))" stopOpacity={0}/>
                         </linearGradient>
                       </defs>
-                      <CartesianGrid vertical={false} strokeDasharray="3 3" opacity={0.5} />
-                      <XAxis dataKey="date" tickFormatter={(val) => new Date(val).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} fontSize={12} tickLine={false} axisLine={false} />
-                      <YAxis tickFormatter={(val) => formatNumber(val)} fontSize={12} tickLine={false} axisLine={false} />
-                      <RechartsTooltip 
-                        contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', borderRadius: '8px' }}
-                        labelFormatter={(val) => new Date(val).toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}
+                      <CartesianGrid vertical={false} strokeDasharray="3 3" opacity={0.4} />
+                      <XAxis dataKey="date" fontSize={11} tickLine={false} axisLine={false} />
+                      <YAxis tickFormatter={(val) => formatNumber(val)} fontSize={11} tickLine={false} axisLine={false} />
+                      <RechartsTooltip
+                        contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', borderRadius: '10px', fontSize: '12px' }}
                       />
-                      <Legend />
+                      <Legend iconType="circle" iconSize={8} />
                       <Area type="monotone" dataKey="demand" name="Demand" stroke="hsl(var(--primary))" strokeWidth={2} fillOpacity={1} fill="url(#colorDemand)" />
                       <Area type="monotone" dataKey="supply" name="Supply" stroke="hsl(var(--accent))" strokeWidth={2} fillOpacity={1} fill="url(#colorSupply)" />
                     </AreaChart>
@@ -109,15 +123,15 @@ export default function ExecutiveOverview() {
                 <div className="h-[300px] w-full">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={performance?.data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                      <CartesianGrid vertical={false} strokeDasharray="3 3" opacity={0.5} />
-                      <XAxis dataKey="month" fontSize={12} tickLine={false} axisLine={false} />
-                      <YAxis tickFormatter={(val) => `$${formatNumber(val)}`} fontSize={12} tickLine={false} axisLine={false} width={40} />
+                      <CartesianGrid vertical={false} strokeDasharray="3 3" opacity={0.4} />
+                      <XAxis dataKey="month" fontSize={11} tickLine={false} axisLine={false} />
+                      <YAxis tickFormatter={(val) => `$${formatNumber(val)}`} fontSize={11} tickLine={false} axisLine={false} width={40} />
                       <RechartsTooltip
                         cursor={{ fill: 'hsl(var(--muted)/0.5)' }}
-                        contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', borderRadius: '8px' }}
+                        contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', borderRadius: '10px', fontSize: '12px' }}
                         formatter={(value: number) => formatCurrency(value)}
                       />
-                      <Legend />
+                      <Legend iconType="circle" iconSize={8} />
                       <Bar dataKey="revenue" name="Revenue" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
                       <Bar dataKey="cost" name="Cost" fill="hsl(var(--destructive))" radius={[4, 4, 0, 0]} />
                     </BarChart>
@@ -181,7 +195,7 @@ function KpiCard({ title, value, change, icon: Icon, format, loading, invertTren
               {isPositive ? <ArrowUpRight className="h-3 w-3 mr-0.5" /> : <ArrowDownRight className="h-3 w-3 mr-0.5" />}
               {Math.abs(change)}%
             </span>
-            from last month
+            from last period
           </p>
         </CardContent>
       </Card>

@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { 
   useGetSuppliers, getGetSuppliersQueryKey,
   useGetLeadTimeTrend, getGetLeadTimeTrendQueryKey
@@ -11,11 +10,21 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { 
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Legend
 } from "recharts";
-import { Award, Clock, DollarSign, Search, ShieldCheck, ShieldAlert } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { Award, Clock, DollarSign, ShieldCheck, ShieldAlert } from "lucide-react";
+import { FilterBar } from "@/components/filters/FilterBar";
+import { useFilters } from "@/contexts/FiltersContext";
+
+const PAGE = "procurement";
+const CATEGORIES = ["Electronics", "Chemicals", "Raw Materials", "Packaging", "Machinery"];
+const SUPPLIER_STATUSES = [
+  { value: "preferred",    label: "Preferred" },
+  { value: "approved",     label: "Approved" },
+  { value: "under_review", label: "Under Review" },
+  { value: "suspended",    label: "Suspended" },
+];
 
 export default function ProcurementDashboard() {
-  const [searchTerm, setSearchTerm] = useState("");
+  const { filters } = useFilters(PAGE);
   
   const { data: suppliersData, isLoading: suppLoading } = useGetSuppliers(
     { limit: 20 },
@@ -41,18 +50,28 @@ export default function ProcurementDashboard() {
     }
   };
 
-  const filteredSuppliers = suppliersData?.suppliers.filter(s => 
-    s.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    s.category.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredSuppliers = suppliersData?.suppliers.filter(s => {
+    const matchSearch = !filters.search ||
+      s.name.toLowerCase().includes(filters.search.toLowerCase()) ||
+      s.category.toLowerCase().includes(filters.search.toLowerCase());
+    const matchStatus = filters.status === "all" || s.status === filters.status;
+    const matchCategory = filters.category === "all" || s.category === filters.category;
+    return matchSearch && matchStatus && matchCategory;
+  });
 
   return (
     <PageTransition>
       <div className="flex flex-col gap-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Procurement & Suppliers</h1>
-          <p className="text-muted-foreground mt-1">Supplier performance, spend analysis, and compliance.</p>
+        <div className="page-header">
+          <h1>Procurement &amp; Suppliers</h1>
+          <p className="text-sm text-muted-foreground">Supplier performance, spend analysis, and compliance.</p>
         </div>
+
+        <FilterBar config={{
+          page: PAGE,
+          show: { search: true, dateRange: true, category: true, status: true },
+          options: { categories: CATEGORIES, statuses: SUPPLIER_STATUSES },
+        }} />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <Card className="lg:col-span-2 glass-card">
@@ -122,21 +141,10 @@ export default function ProcurementDashboard() {
         </div>
 
         <Card className="glass-card">
-          <CardHeader className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
-            <div>
+          <CardHeader>
               <CardTitle>Supplier Directory</CardTitle>
-              <CardDescription>Assess and manage vendor relationships</CardDescription>
-            </div>
-            <div className="relative w-full sm:w-64">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input 
-                placeholder="Search suppliers..." 
-                className="pl-9 bg-background/50 border-border"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-          </CardHeader>
+              <CardDescription>Assess and manage vendor relationships · {filteredSuppliers?.length ?? 0} suppliers</CardDescription>
+            </CardHeader>
           <CardContent>
             {suppLoading ? (
               <Skeleton className="w-full h-96" />
@@ -181,7 +189,7 @@ export default function ProcurementDashboard() {
                     {filteredSuppliers?.length === 0 && (
                       <TableRow>
                         <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
-                          No suppliers found matching "{searchTerm}"
+                          No suppliers found matching "{filters.search}"
                         </TableCell>
                       </TableRow>
                     )}

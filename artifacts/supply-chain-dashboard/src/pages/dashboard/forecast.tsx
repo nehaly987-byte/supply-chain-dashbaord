@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { 
   useGetForecast, getGetForecastQueryKey,
   useGetSeasonality, getGetSeasonalityQueryKey
@@ -6,15 +5,23 @@ import {
 import { PageTransition } from "@/components/PageTransition";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
-  ComposedChart, Line, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Legend, Bar, BarChart
+  ComposedChart, Line, Area, Cell, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Legend, Bar, BarChart
 } from "recharts";
 import { BrainCircuit, TrendingUp, Activity } from "lucide-react";
+import { FilterBar } from "@/components/filters/FilterBar";
+import { useFilters } from "@/contexts/FiltersContext";
+
+const PAGE = "forecast";
+const PRODUCT_CATEGORIES = ["Electronics", "Apparel", "Furniture", "All Products"];
 
 export default function ForecastDashboard() {
-  const [period, setPeriod] = useState<"3m" | "6m" | "1y" | "2y">("6m");
-  const [product, setProduct] = useState("all");
+  const { filters } = useFilters(PAGE);
+  const period = (filters.dateRange?.preset === "7d" ? "3m"
+               : filters.dateRange?.preset === "90d" ? "6m"
+               : filters.dateRange?.preset === "1y"  ? "1y"
+               : "6m") as "3m" | "6m" | "1y" | "2y";
+  const product = filters.category !== "all" ? filters.category.toLowerCase() : "all";
   
   const { data: forecastData, isLoading: forecastLoading } = useGetForecast(
     { period, product: product === "all" ? undefined : product },
@@ -28,37 +35,16 @@ export default function ForecastDashboard() {
   return (
     <PageTransition>
       <div className="flex flex-col gap-6">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Demand Forecasting</h1>
-            <p className="text-muted-foreground mt-1">AI-powered predictive models and seasonality trends.</p>
-          </div>
-          
-          <div className="flex gap-2">
-            <Select value={product} onValueChange={setProduct}>
-              <SelectTrigger className="w-[150px] bg-card border-border">
-                <SelectValue placeholder="All Products" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Products</SelectItem>
-                <SelectItem value="electronics">Electronics</SelectItem>
-                <SelectItem value="apparel">Apparel</SelectItem>
-                <SelectItem value="furniture">Furniture</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={period} onValueChange={(val: any) => setPeriod(val)}>
-              <SelectTrigger className="w-[120px] bg-card border-border">
-                <SelectValue placeholder="Time Period" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="3m">3 Months</SelectItem>
-                <SelectItem value="6m">6 Months</SelectItem>
-                <SelectItem value="1y">1 Year</SelectItem>
-                <SelectItem value="2y">2 Years</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+        <div className="page-header">
+          <h1>Demand Forecasting</h1>
+          <p className="text-sm text-muted-foreground">AI-powered predictive models and seasonality trends.</p>
         </div>
+
+        <FilterBar config={{
+          page: PAGE,
+          show: { search: false, dateRange: true, category: true },
+          options: { categories: PRODUCT_CATEGORIES },
+        }} />
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <Card className="glass-card bg-gradient-to-br from-card to-primary/5 border-primary/20">
@@ -172,7 +158,7 @@ export default function ForecastDashboard() {
                     <Bar dataKey="index" name="Seasonality Index" fill="hsl(var(--accent))" radius={[4, 4, 0, 0]}>
                       {
                         seasonalityData?.data.map((entry, index) => (
-                          <cell key={`cell-${index}`} fill={entry.index > 100 ? 'hsl(var(--primary))' : 'hsl(var(--muted-foreground)/0.5)'} />
+                          <Cell key={`cell-${index}`} fill={entry.index > 100 ? 'hsl(var(--primary))' : 'hsl(var(--muted-foreground)/0.5)'} />
                         ))
                       }
                     </Bar>

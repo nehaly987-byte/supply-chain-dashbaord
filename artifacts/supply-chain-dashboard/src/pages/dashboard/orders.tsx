@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { 
   useGetOrders, getGetOrdersQueryKey,
   useGetFulfillmentMetrics, getGetFulfillmentMetricsQueryKey,
@@ -9,20 +8,29 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Legend
 } from "recharts";
-import { Search, PackageCheck, AlertCircle, RotateCcw, PackageX } from "lucide-react";
+import { PackageCheck, AlertCircle, RotateCcw, PackageX } from "lucide-react";
+import { FilterBar } from "@/components/filters/FilterBar";
+import { useFilters } from "@/contexts/FiltersContext";
+
+const PAGE = "orders";
+const ORDER_STATUSES = [
+  { value: "pending",    label: "Pending" },
+  { value: "processing",label: "Processing" },
+  { value: "shipped",   label: "Shipped" },
+  { value: "delivered", label: "Delivered" },
+  { value: "cancelled", label: "Cancelled" },
+];
 
 export default function OrdersDashboard() {
-  const [status, setStatus] = useState<string>("all");
-  const [searchTerm, setSearchTerm] = useState("");
+  const { filters } = useFilters(PAGE);
+  const apiStatus = filters.status !== "all" ? filters.status : undefined;
   
   const { data: ordersData, isLoading: ordersLoading } = useGetOrders(
-    { status: status === "all" ? undefined : status, limit: 15 },
-    { query: { queryKey: getGetOrdersQueryKey({ status: status === "all" ? undefined : status, limit: 15 }) } }
+    { status: apiStatus, limit: 15 },
+    { query: { queryKey: getGetOrdersQueryKey({ status: apiStatus, limit: 15 }) } }
   );
   
   const { data: metricsData, isLoading: metricsLoading } = useGetFulfillmentMetrics({ query: { queryKey: getGetFulfillmentMetricsQueryKey() } });
@@ -48,18 +56,25 @@ export default function OrdersDashboard() {
 
   const formatCurrency = (val: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(val);
 
-  const filteredOrders = ordersData?.orders.filter(o => 
-    o.orderNumber.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    o.customer.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredOrders = ordersData?.orders.filter(o =>
+    !filters.search ||
+    o.orderNumber.toLowerCase().includes(filters.search.toLowerCase()) ||
+    o.customer.toLowerCase().includes(filters.search.toLowerCase())
   );
 
   return (
     <PageTransition>
       <div className="flex flex-col gap-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Order Management</h1>
-          <p className="text-muted-foreground mt-1">Lifecycle tracking and fulfillment performance.</p>
+        <div className="page-header">
+          <h1>Order Management</h1>
+          <p className="text-sm text-muted-foreground">Lifecycle tracking and fulfillment performance.</p>
         </div>
+
+        <FilterBar config={{
+          page: PAGE,
+          show: { search: true, dateRange: true, status: true },
+          options: { statuses: ORDER_STATUSES },
+        }} />
 
         <StaggerContainer className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <StaggerItem>
@@ -118,34 +133,9 @@ export default function OrdersDashboard() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <Card className="lg:col-span-2 glass-card">
-            <CardHeader className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
-              <div>
-                <CardTitle>Order Log</CardTitle>
-                <CardDescription>Recent transactions and status</CardDescription>
-              </div>
-              <div className="flex gap-2">
-                <div className="relative w-full sm:w-48">
-                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input 
-                    placeholder="Search orders..." 
-                    className="pl-9 bg-background/50 border-border"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                  />
-                </div>
-                <Select value={status} onValueChange={setStatus}>
-                  <SelectTrigger className="w-[130px] bg-background/50 border-border">
-                    <SelectValue placeholder="Status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Status</SelectItem>
-                    <SelectItem value="pending">Pending</SelectItem>
-                    <SelectItem value="processing">Processing</SelectItem>
-                    <SelectItem value="shipped">Shipped</SelectItem>
-                    <SelectItem value="delivered">Delivered</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+            <CardHeader>
+              <CardTitle>Order Log</CardTitle>
+              <CardDescription>Recent transactions and status</CardDescription>
             </CardHeader>
             <CardContent>
               {ordersLoading ? (

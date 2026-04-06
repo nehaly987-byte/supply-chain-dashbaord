@@ -9,6 +9,7 @@ import productionRouter from "./production";
 import costsRouter from "./costs";
 import risksRouter from "./risks";
 import ordersRouter from "./orders";
+import aiRouter from "./ai";
 
 const router: IRouter = Router();
 
@@ -22,5 +23,6 @@ router.use(productionRouter);
 router.use(costsRouter);
 router.use(risksRouter);
 router.use(ordersRouter);
+router.use(aiRouter);
 
 export default router;
